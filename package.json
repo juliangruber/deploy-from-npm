@@ -1,0 +1,20 @@
+{
+  "name": "deploy-from-npm",
+  "version": "0.0.0",
+  "description": "Continuous deployments tailing npm",
+  "repository": "juliangruber/deploy-from-npm",
+  "license": "MIT",
+  "scripts": {
+    "test": "standard"
+  },
+  "dependencies": {
+    "comandante": "0.0.1",
+    "hyperquest": "^2.0.0",
+    "ndjson": "^1.4.3",
+    "pump": "^1.0.1",
+    "semver": "^5.3.0"
+  },
+  "devDependencies": {
+    "standard": "^7.1.2"
+  }
+}
