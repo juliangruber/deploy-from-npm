@@ -95,7 +95,7 @@ function filter (deps) {
 
     var name = doc.name
     var latest = doc['dist-tags'] && doc['dist-tags'].latest
-    var repo = (doc.repository && doc.repository.url)
+    var repo = (doc.repository && doc.repository.url || '')
       .replace(/^git\+/, '')
 
     if (!deps[doc.name]) return cb()
