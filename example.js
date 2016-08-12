@@ -1,5 +1,3 @@
-require('.')({
-  dependencies: {
-    sillytest: '^1.0.0'
-  }
-})
+var join = require('path').join
+
+require('.')(join(__dirname, 'test', 'fixture'))

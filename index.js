@@ -16,15 +16,14 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
   '&feed=continuous' +
   '&since=now'
 
-// NEXT: create test/fixture/package.json
-// pass in dir from example.js
+// NEXT:
 // npm install inside dir
 // restart process
 // start process in the first place
 // check for updates on boot
 
-function deploy (pkg) {
-  //var pkg = require(join(dir, 'package.json'))
+function deploy (dir) {
+  var pkg = require(join(dir, 'package.json'))
   var deps = pkg.dependencies || {}
   var depNames = Object.keys(deps)
   if (!depNames.length) return
