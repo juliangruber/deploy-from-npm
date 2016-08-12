@@ -17,8 +17,8 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
   '&since=now'
 
 // NEXT:
-// npm install inside dir
-// restart process
+// signal to restart process
+// verify git installed version matches npm version
 // start process in the first place
 // check for updates on boot
 
