@@ -43,14 +43,13 @@ function test () {
     var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
 
     console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
-    var git = run('git', ['clone', pkg.repo, dir])
-    git.pipe(process.stdout, { end: false })
-    git.on('error', cb)
-    git.once('close', function () {
+    run('git', ['clone', pkg.repo, dir])
+    .on('error', cb)
+    .once('close', function () {
       console.log('Running tests of %s@%s', pkg.name, pkg.version)
-      var npm = run('npm', ['test'], { cwd: dir })
-      npm.on('error', cb)
-      npm.once('close', function () {
+      run('npm', ['test'], { cwd: dir })
+      .on('error', cb)
+      .once('close', function () {
         cb(null, pkg)
       })
     })
