@@ -4,7 +4,7 @@ var ndjson = require('ndjson')
 var Transform = require('stream').Transform
 var Writable = require('stream').Writable
 var semver = require('semver')
-var run = require('comandante')
+var comandante = require('comandante')
 var fs = require('fs')
 var join = require('path').join
 
@@ -37,19 +37,31 @@ function deploy (dir) {
   )
 }
 
+function run (cmd, args, opts, cb) {
+  comandante(cmd, args, opts)
+  .on('error', function (err) {
+    console.error(err)
+    console.error('Abort!')
+    cb(err)
+  })
+  .on('exit', function (code) {
+    if (code !== 0) return
+    cb()
+  })
+}
+
 function test () {
   function transform (pkg, _, cb) {
     console.log('Testing candidate %s@%s', pkg.name, pkg.version)
     var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
 
     console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
-    run('git', ['clone', pkg.repo, dir])
-    .on('error', cb)
-    .once('close', function () {
+    run('git', ['clone', pkg.repo, dir], {}, function (err) {
+      if (err) return cb()
+
       console.log('Running tests of %s@%s', pkg.name, pkg.version)
-      run('npm', ['test'], { cwd: dir })
-      .on('error', cb)
-      .once('close', function () {
+      run('npm', ['test'], { cwd: dir }, function (err) {
+        if (err) return cb()
         cb(null, pkg)
       })
     })
@@ -63,9 +75,8 @@ function test () {
 function upgrade (dir) {
   function write (pkg, _, cb) {
     console.log('Upgrade to %s@%s', pkg.name, pkg.version)
-    run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir })
-    .on('error', cb)
-    .once('close', function () {
+    run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir }, function (err) {
+      if (err) return cb()
       console.log('Installed!')
       cb()
     })
