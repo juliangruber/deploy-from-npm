@@ -19,7 +19,6 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
 // NEXT:
 // signal to restart process
 // verify git installed version matches npm version
-// start process in the first place
 // check for updates on boot
 
 function deploy (dir) {
