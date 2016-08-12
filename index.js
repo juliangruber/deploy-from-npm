@@ -33,7 +33,7 @@ function deploy (dir) {
     ndjson.parse(),
     filter(deps),
     test(),
-    upgrade()
+    upgrade(dir)
   )
 }
 
@@ -60,9 +60,15 @@ function test () {
   })
 }
 
-function upgrade () {
+function upgrade (dir) {
   function write (pkg, _, cb) {
     console.log('Upgrade to %s@%s', pkg.name, pkg.version)
+    run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir })
+    .on('error', cb)
+    .once('close', function () {
+      console.log('Installed!')
+      cb()
+    })
   }
   return Writable({
     objectMode: true,
