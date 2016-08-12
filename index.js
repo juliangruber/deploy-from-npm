@@ -6,6 +6,7 @@ var Writable = require('stream').Writable
 var semver = require('semver')
 var run = require('comandante')
 var fs = require('fs')
+var join = require('path').join
 
 module.exports = deploy
 
@@ -15,7 +16,15 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
   '&feed=continuous' +
   '&since=now'
 
+// NEXT: create test/fixture/package.json
+// pass in dir from example.js
+// npm install inside dir
+// restart process
+// start process in the first place
+// check for updates on boot
+
 function deploy (pkg) {
+  //var pkg = require(join(dir, 'package.json'))
   var deps = pkg.dependencies || {}
   var depNames = Object.keys(deps)
   if (!depNames.length) return
