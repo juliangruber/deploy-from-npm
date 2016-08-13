@@ -20,10 +20,6 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
   '&feed=continuous' +
   '&since=now'
 
-var client = new RegClient({
-  cache: join('/tmp/', Math.random().toString(16).slice(2))
-})
-
 // NEXT:
 // verify git installed version matches npm version
 
@@ -50,6 +46,7 @@ function deploy (dir, reload) {
     var depName = depNames[i++]
     if (!depName) return upgradeSelected(toUpgrade)
 
+    var client = new RegClient()
     client.get('https://registry.npmjs.org/' + depName, {}, function (err, doc) {
       if (err) return pipeline.emit('error', err)
       var latest = doc['dist-tags'] && doc['dist-tags'].latest
