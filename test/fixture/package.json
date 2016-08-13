@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "sillytest": "^1.0.0"
+    "sillytest": "^1.0.0",
+    "sillytest2": "^1.0.0"
   }
 }

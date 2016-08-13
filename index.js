@@ -49,22 +49,20 @@ function deploy (dir, reload) {
     var depName = depNames[i++]
     if (!depName) return upgradeSelected(toUpgrade)
 
-    client.get('https://registry.npmjs.org/' + depName, {}, function (err, pkg) {
+    client.get('https://registry.npmjs.org/' + depName, {}, function (err, doc) {
       if (err) return pipeline.emit('error', err)
-      var latest = pkg['dist-tags'] && pkg['dist-tags'].latest
+      var latest = doc['dist-tags'] && doc['dist-tags'].latest
       if (!latest) return checkAndTest()
       var pkgPath = join(dir, 'node_modules', depName, 'package.json')
       fs.readFile(pkgPath, function (err, raw) {
-        if (err) {
-          pipeline.emit('error', err)
-          return checkAndTest()
+        if (!err) {
+          var json = JSON.parse(raw)
+          if (json.version === latest) {
+            console.log('OK %s@%s', depName, latest)
+            return checkAndTest()
+          }
         }
-        var json = JSON.parse(raw)
-        if (json.version === latest) {
-          console.log('OK %s@%s', depName, latest)
-          return checkAndTest()
-        }
-        var repo = getRepo(json)
+        var repo = getRepo(doc)
         if (!repo) {
           console.error('Skipping %s@%s (invalid repository)', depName, latest)
           return checkAndTest()
