@@ -109,25 +109,28 @@ function filterStream (deps) {
   })
 }
 
-function testStream () {
-  function transform (pkg, _, cb) {
-    console.log('Testing candidate %s@%s', pkg.name, pkg.version)
-    var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
+function test (pkg, cb) {
+  console.log('Testing candidate %s@%s', pkg.name, pkg.version)
+  var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
 
-    console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
-    run('git', ['clone', pkg.repo, dir], {}, function (err) {
+  console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
+  run('git', ['clone', pkg.repo, dir], {}, function (err) {
+    if (err) return cb()
+
+    console.log('Running tests of %s@%s', pkg.name, pkg.version)
+    run('npm', ['test'], { cwd: dir }, function (err) {
       if (err) return cb()
-
-      console.log('Running tests of %s@%s', pkg.name, pkg.version)
-      run('npm', ['test'], { cwd: dir }, function (err) {
-        if (err) return cb()
-        cb(null, pkg)
-      })
+      cb(null, pkg)
     })
-  }
+  })
+}
+
+function testStream () {
   return Transform({
     objectMode: true,
-    transform: transform
+    transform: function (pkg, _, cb) {
+      test(pkg, cb)
+    }
   })
 }
 
