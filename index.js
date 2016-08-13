@@ -33,14 +33,14 @@ function deploy (dir, reload) {
   var depNames = Object.keys(deps)
   if (!depNames.length) return
 
-  var t = test()
+  var t = testStream()
   var pipeline = pipe(
     request(url),
     ndjson.parse(),
-    filter(deps),
+    filterStream(deps),
     t,
-    upgrade(dir),
-    signal(reload)
+    upgradeStream(dir),
+    signalStream(reload)
   )
 
   var i = 0
@@ -81,7 +81,7 @@ function deploy (dir, reload) {
   return pipeline
 }
 
-function filter (deps) {
+function filterStream (deps) {
   function transform (row, _, cb) {
     if (/^_design\//.test(row.id)) return cb()
     var doc = row.doc
@@ -109,7 +109,7 @@ function filter (deps) {
   })
 }
 
-function test () {
+function testStream () {
   function transform (pkg, _, cb) {
     console.log('Testing candidate %s@%s', pkg.name, pkg.version)
     var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
@@ -131,7 +131,7 @@ function test () {
   })
 }
 
-function upgrade (dir) {
+function upgradeStream (dir) {
   function transform (pkg, _, cb) {
     console.log('Upgrade to %s@%s', pkg.name, pkg.version)
     run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir }, function (err) {
@@ -146,7 +146,7 @@ function upgrade (dir) {
   })
 }
 
-function signal (reload) {
+function signalStream (reload) {
   function write (dir, _, cb) {
     console.log('Reload %s', dir)
     reload(function (err) {
