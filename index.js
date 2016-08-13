@@ -7,6 +7,7 @@ var semver = require('semver')
 var comandante = require('comandante')
 var fs = require('fs')
 var join = require('path').join
+var assert = require('assert')
 
 module.exports = deploy
 
@@ -17,11 +18,12 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
   '&since=now'
 
 // NEXT:
-// signal to restart process
 // verify git installed version matches npm version
 // check for updates on boot
 
-function deploy (dir) {
+function deploy (dir, reload) {
+  assert(dir, 'dir required')
+  assert(reload, 'reload fn required')
   var pkg = require(join(dir, 'package.json'))
   var deps = pkg.dependencies || {}
   var depNames = Object.keys(deps)
@@ -32,58 +34,9 @@ function deploy (dir) {
     ndjson.parse(),
     filter(deps),
     test(),
-    upgrade(dir)
+    upgrade(dir),
+    signal(reload)
   )
-}
-
-function run (cmd, args, opts, cb) {
-  comandante(cmd, args, opts)
-  .on('error', function (err) {
-    console.error(err)
-    console.error('Abort!')
-    cb(err)
-  })
-  .on('exit', function (code) {
-    if (code !== 0) return
-    cb()
-  })
-}
-
-function test () {
-  function transform (pkg, _, cb) {
-    console.log('Testing candidate %s@%s', pkg.name, pkg.version)
-    var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
-
-    console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
-    run('git', ['clone', pkg.repo, dir], {}, function (err) {
-      if (err) return cb()
-
-      console.log('Running tests of %s@%s', pkg.name, pkg.version)
-      run('npm', ['test'], { cwd: dir }, function (err) {
-        if (err) return cb()
-        cb(null, pkg)
-      })
-    })
-  }
-  return Transform({
-    objectMode: true,
-    transform: transform
-  })
-}
-
-function upgrade (dir) {
-  function write (pkg, _, cb) {
-    console.log('Upgrade to %s@%s', pkg.name, pkg.version)
-    run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir }, function (err) {
-      if (err) return cb()
-      console.log('Installed!')
-      cb()
-    })
-  }
-  return Writable({
-    objectMode: true,
-    write: write
-  })
 }
 
 function filter (deps) {
@@ -112,5 +65,70 @@ function filter (deps) {
   return Transform({
     objectMode: true,
     transform: transform
+  })
+}
+
+function test () {
+  function transform (pkg, _, cb) {
+    console.log('Testing candidate %s@%s', pkg.name, pkg.version)
+    var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
+
+    console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
+    run('git', ['clone', pkg.repo, dir], {}, function (err) {
+      if (err) return cb()
+
+      console.log('Running tests of %s@%s', pkg.name, pkg.version)
+      run('npm', ['test'], { cwd: dir }, function (err) {
+        if (err) return cb()
+        cb(null, pkg)
+      })
+    })
+  }
+  return Transform({
+    objectMode: true,
+    transform: transform
+  })
+}
+
+function upgrade (dir) {
+  function transform (pkg, _, cb) {
+    console.log('Upgrade to %s@%s', pkg.name, pkg.version)
+    run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir }, function (err) {
+      if (err) return cb()
+      console.log('Installed!')
+      cb(null, dir)
+    })
+  }
+  return Transform({
+    objectMode: true,
+    transform: transform
+  })
+}
+
+function signal (reload) {
+  function write (dir, _, cb) {
+    console.log('Reload %s', dir)
+    reload(function (err) {
+      if (err) return cb(err)
+      console.log('Reloaded!')
+      cb()
+    })
+  }
+  return Writable({
+    objectMode: true,
+    write: write
+  })
+}
+
+function run (cmd, args, opts, cb) {
+  comandante(cmd, args, opts)
+  .on('error', function (err) {
+    console.error(err)
+    console.error('Abort!')
+    cb(err)
+  })
+  .on('exit', function (code) {
+    if (code !== 0) return
+    cb()
   })
 }

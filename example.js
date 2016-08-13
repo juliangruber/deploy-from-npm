@@ -1,3 +1,7 @@
 var join = require('path').join
 
-require('.')(join(__dirname, 'test', 'fixture'))
+var dir = join(__dirname, 'test', 'fixture')
+var reload = function (cb) {
+  setTimeout(cb, 2000)
+}
+require('.')(dir, reload)
