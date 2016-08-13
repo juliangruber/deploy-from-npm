@@ -7,6 +7,9 @@
   "scripts": {
     "test": "standard"
   },
+  "bin": {
+    "deploy-from-npm": "bin/deploy-from-npm.js"
+  },
   "dependencies": {
     "comandante": "0.0.1",
     "hyperquest": "^2.0.0",
