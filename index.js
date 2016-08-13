@@ -9,6 +9,7 @@ var fs = require('fs')
 var join = require('path').join
 var assert = require('assert')
 var RegClient = require('silent-npm-registry-client')
+var rmrf = require('rimraf')
 
 module.exports = deploy
 
@@ -33,50 +34,64 @@ function deploy (dir, reload) {
   var depNames = Object.keys(deps)
   if (!depNames.length) return
 
-  var t = testStream()
   var pipeline = pipe(
     request(url),
     ndjson.parse(),
     filterStream(deps),
-    t,
+    testStream(),
     upgradeStream(dir),
     signalStream(reload)
   )
 
+  var toUpgrade = []
   var i = 0
-  function next () {
+  function checkAndTest () {
     var depName = depNames[i++]
-    if (!depName) return console.error('Checked all dependencies')
+    if (!depName) return upgradeSelected(toUpgrade)
+
     client.get('https://registry.npmjs.org/' + depName, {}, function (err, pkg) {
       if (err) return pipeline.emit('error', err)
       var latest = pkg['dist-tags'] && pkg['dist-tags'].latest
-      if (!latest) return next()
+      if (!latest) return checkAndTest()
       var pkgPath = join(dir, 'node_modules', depName, 'package.json')
       fs.readFile(pkgPath, function (err, raw) {
         if (err) {
           pipeline.emit('error', err)
-          return next()
+          return checkAndTest()
         }
         var json = JSON.parse(raw)
         if (json.version === latest) {
           console.log('OK %s@%s', depName, latest)
-          return next()
+          return checkAndTest()
         }
-        var repo = getRepo(pkg)
+        var repo = getRepo(json)
         if (!repo) {
           console.error('Skipping %s@%s (invalid repository)', depName, latest)
-          return next()
+          return checkAndTest()
         }
-        t.write({
+        var pkg = {
           name: depName,
           version: latest,
           repo: repo
+        }
+        test(pkg, function (err) {
+          if (err) return checkAndTest()
+          toUpgrade.push(pkg)
+          checkAndTest()
         })
-        next()
       })
     })
   }
-  next()
+
+  function upgradeSelected (toUpgrade) {
+    if (!toUpgrade.length) return console.log('All OK')
+    upgrade(dir, toUpgrade, function (err) {
+      if (err) return
+      console.log('Upgraded all!')
+    })
+  }
+
+  checkAndTest()
 
   return pipeline
 }
@@ -112,15 +127,18 @@ function filterStream (deps) {
 function test (pkg, cb) {
   console.log('Testing candidate %s@%s', pkg.name, pkg.version)
   var dir = '/tmp/test-' + pkg.name + '-' + pkg.version
+  rmrf(dir, function (err) {
+    if (err) return cb(err)
 
-  console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
-  run('git', ['clone', pkg.repo, dir], {}, function (err) {
-    if (err) return cb()
+    console.log('Cloning %s@%s into %s', pkg.name, pkg.version, dir)
+    run('git', ['clone', pkg.repo, dir], {}, function (err) {
+      if (err) return cb(err)
 
-    console.log('Running tests of %s@%s', pkg.name, pkg.version)
-    run('npm', ['test'], { cwd: dir }, function (err) {
-      if (err) return cb()
-      cb(null, pkg)
+      console.log('Running tests of %s@%s', pkg.name, pkg.version)
+      run('npm', ['test'], { cwd: dir }, function (err) {
+        if (err) return cb(err)
+        cb(null, pkg)
+      })
     })
   })
 }
@@ -129,18 +147,34 @@ function testStream () {
   return Transform({
     objectMode: true,
     transform: function (pkg, _, cb) {
-      test(pkg, cb)
+      test(pkg, function (err, pkg) {
+        if (err) cb()
+        else cb(null, pkg)
+      })
     }
+  })
+}
+
+function upgrade (dir, pkgs, cb) {
+  var args = ['install']
+  pkgs.forEach(function (pkg) {
+    console.log('Upgrade to %s@%s', pkg.name, pkg.version)
+    args.push(pkg.name + '@' + pkg.version)
+  })
+  run('npm', args, { cwd: dir }, function (err) {
+    if (err) return cb(err)
+    pkgs.forEach(function (pkg) {
+      console.log('Installed %s@%s', pkg.name, pkg.version)
+    })
+    cb(null, dir)
   })
 }
 
 function upgradeStream (dir) {
   function transform (pkg, _, cb) {
-    console.log('Upgrade to %s@%s', pkg.name, pkg.version)
-    run('npm', ['install', pkg.name + '@' + pkg.version], { cwd: dir }, function (err) {
-      if (err) return cb()
-      console.log('Installed!')
-      cb(null, dir)
+    upgrade(dir, [pkg], function (err, dir) {
+      if (err) cb()
+      else cb(null, dir)
     })
   }
   return Transform({
