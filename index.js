@@ -46,7 +46,7 @@ function deploy (dir, reload) {
   var i = 0
   function next () {
     var depName = depNames[i++]
-    if (!depName) return
+    if (!depName) return console.error('Checked all dependencies')
     client.get('https://registry.npmjs.org/' + depName, {}, function (err, pkg) {
       if (err) return pipeline.emit('error', err)
       var latest = pkg['dist-tags'] && pkg['dist-tags'].latest
