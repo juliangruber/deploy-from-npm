@@ -133,10 +133,15 @@ function test (pkg, cb) {
     run('git', ['clone', pkg.repo, dir], {}, function (err) {
       if (err) return cb(err)
 
-      console.log('Running tests of %s@%s', pkg.name, pkg.version)
-      run('npm', ['test'], { cwd: dir }, function (err) {
+      console.log('Installing dependencies of %s@%s', pkg.name, pkg.version)
+      run('npm', ['install'], { cwd: dir }, function (err) {
         if (err) return cb(err)
-        cb(null, pkg)
+
+        console.log('Running tests of %s@%s', pkg.name, pkg.version)
+        run('npm', ['test'], { cwd: dir }, function (err) {
+          if (err) return cb(err)
+          cb(null, pkg)
+        })
       })
     })
   })
