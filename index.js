@@ -43,34 +43,40 @@ function deploy (dir, reload) {
     signal(reload)
   )
 
-  depNames.forEach(function (depName) {
+  var i = 0
+  function next () {
+    var depName = depNames[i++]
+    if (!depName) return
     client.get('https://registry.npmjs.org/' + depName, {}, function (err, pkg) {
       if (err) return pipeline.emit('error', err)
       var latest = pkg['dist-tags'] && pkg['dist-tags'].latest
-      if (!latest) return
+      if (!latest) return next()
       var pkgPath = join(dir, 'node_modules', depName, 'package.json')
       fs.readFile(pkgPath, function (err, raw) {
-        if (err) return pipeline.emit('error', err)
+        if (err) {
+          pipeline.emit('error', err)
+          return next()
+        }
         var json = JSON.parse(raw)
         if (json.version === latest) {
           console.log('OK %s@%s', depName, latest)
-          return
+          return next()
         }
         var repo = getRepo(pkg)
         if (!repo) {
           console.error('Skipping %s@%s (invalid repository)', depName, latest)
-          return
+          return next()
         }
         t.write({
           name: depName,
           version: latest,
           repo: repo
         })
+        next()
       })
     })
-    // get actual version
-    // compare with npm version
-  })
+  }
+  next()
 
   return pipeline
 }
