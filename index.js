@@ -8,6 +8,7 @@ var comandante = require('comandante')
 var fs = require('fs')
 var join = require('path').join
 var assert = require('assert')
+var RegClient = require('silent-npm-registry-client')
 
 module.exports = deploy
 
@@ -17,9 +18,12 @@ var url = 'https://skimdb.npmjs.com/registry/_changes' +
   '&feed=continuous' +
   '&since=now'
 
+var client = new RegClient({
+  cache: join('/tmp/', Math.random().toString(16).slice(2))
+})
+
 // NEXT:
 // verify git installed version matches npm version
-// check for updates on boot
 
 function deploy (dir, reload) {
   assert(dir, 'dir required')
@@ -29,14 +33,46 @@ function deploy (dir, reload) {
   var depNames = Object.keys(deps)
   if (!depNames.length) return
 
-  pipe(
+  var t = test()
+  var pipeline = pipe(
     request(url),
     ndjson.parse(),
     filter(deps),
-    test(),
+    t,
     upgrade(dir),
     signal(reload)
   )
+
+  depNames.forEach(function (depName) {
+    client.get('https://registry.npmjs.org/' + depName, {}, function (err, pkg) {
+      if (err) return pipeline.emit('error', err)
+      var latest = pkg['dist-tags'] && pkg['dist-tags'].latest
+      if (!latest) return
+      var pkgPath = join(dir, 'node_modules', depName, 'package.json')
+      fs.readFile(pkgPath, function (err, raw) {
+        if (err) return pipeline.emit('error', err)
+        var json = JSON.parse(raw)
+        if (json.version === latest) {
+          console.log('OK %s@%s', depName, latest)
+          return
+        }
+        var repo = getRepo(pkg)
+        if (!repo) {
+          console.error('Skipping %s@%s (invalid repository)', depName, latest)
+          return
+        }
+        t.write({
+          name: depName,
+          version: latest,
+          repo: repo
+        })
+      })
+    })
+    // get actual version
+    // compare with npm version
+  })
+
+  return pipeline
 }
 
 function filter (deps) {
@@ -47,8 +83,7 @@ function filter (deps) {
 
     var name = doc.name
     var latest = doc['dist-tags'] && doc['dist-tags'].latest
-    var repo = (doc.repository && doc.repository.url || '')
-      .replace(/^git\+/, '')
+    var repo = getRepo(doc)
 
     if (!deps[doc.name]) return cb()
     if (!semver.satisfies(latest, deps[name])) {
@@ -131,4 +166,9 @@ function run (cmd, args, opts, cb) {
     if (code !== 0) return
     cb()
   })
+}
+
+function getRepo (pkg) {
+  return (pkg.repository && pkg.repository.url || '')
+    .replace(/^git\+/, '')
 }
