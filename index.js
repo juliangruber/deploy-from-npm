@@ -7,6 +7,7 @@ var semver = require('semver')
 var comandante = require('comandante')
 var fs = require('fs')
 var join = require('path').join
+var resolve = require('path').resolve
 var assert = require('assert')
 var RegClient = require('silent-npm-registry-client')
 var rmrf = require('rimraf')
@@ -29,7 +30,7 @@ var client = new RegClient({
 function deploy (dir, reload) {
   assert(dir, 'dir required')
   assert(reload, 'reload fn required')
-  var pkg = require(join(dir, 'package.json'))
+  var pkg = require(resolve(join(dir, 'package.json')))
   var deps = pkg.dependencies || {}
   var depNames = Object.keys(deps)
   if (!depNames.length) return
