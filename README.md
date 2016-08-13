@@ -3,6 +3,21 @@
 
   WIP Continuous deployment tool tailing npm.
 
+## Usage
+
+```bash
+$ deploy-from-npm
+
+Usage:
+
+  $ deploy-from-npm DIR RELOAD
+
+Example:
+
+  $ deploy-from-npm /srv/my-service "kill $server-pid"
+
+```
+
 ## Kudos
 
   This was [@mafintosh](https://github.com/mafintosh)'s idea, I'm just implementing it.
