@@ -60,6 +60,10 @@ function deploy (dir, reload) {
             return checkAndTest()
           }
         }
+        if (!semver.satisfies(latest, deps[depName])) {
+          console.error('Skipping %s@%s (out of range %s)', depName, latest, deps[depName])
+          return checkAndTest()
+        }
         var repo = getRepo(doc)
         if (!repo) {
           console.error('Skipping %s@%s (invalid repository)', depName, latest)
