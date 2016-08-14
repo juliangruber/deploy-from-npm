@@ -170,6 +170,7 @@ function upgrade (lock, dir, pkgs, cb) {
       args.push(pkg.name + '@' + pkg.version)
     })
     run('npm', args, { cwd: dir }, function (err) {
+      release()
       if (err) return cb(err)
       pkgs.forEach(function (pkg) {
         console.log('Installed %s@%s', pkg.name, pkg.version)
