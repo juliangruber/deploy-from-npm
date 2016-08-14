@@ -1,6 +1,6 @@
 {
   "name": "deploy-from-npm",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Continuous deployments tailing npm",
   "repository": "juliangruber/deploy-from-npm",
   "license": "MIT",
