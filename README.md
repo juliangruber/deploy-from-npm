@@ -6,6 +6,7 @@
   Watches npm for all updates to top level dependencies, then if there's a match it runs tests, upgrades your app and
   fires your restart command.
 
+  ![](https://usercontent.irccloud-cdn.com/file/JXWnxpnW/Screen%20Shot%202016-08-13%20at%2014.56.31.png)
 
 ## Usage
 
