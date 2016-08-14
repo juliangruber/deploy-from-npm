@@ -1,9 +1,22 @@
 
 # deploy-from-npm
 
-  WIP Continuous deployment tool tailing npm.
+  Continuous deployment tool tailing npm.
 
 ## Usage
+
+```bash
+$ cd my-service
+
+$ # use something like psy or forever to run your service
+$ npm install -g psy
+$ psy start -n my-service -- npm start
+
+$ # use deploy-from-npm to restart it once a dependency has been updated
+$ deploy-from-npm . "psy restart my-service"
+```
+
+And in general:
 
 ```bash
 $ deploy-from-npm
