@@ -1,7 +1,11 @@
 
 # deploy-from-npm
 
-  Continuous deployment tool tailing npm.
+  Continuous deployment tool using npm.
+  
+  Watches npm for all updates to top level dependencies, then if there's a match it runs tests, upgrades your app and
+  fires your restart command.
+
 
 ## Usage
 
