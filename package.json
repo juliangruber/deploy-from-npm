@@ -13,6 +13,7 @@
   "dependencies": {
     "comandante": "0.0.1",
     "hyperquest": "^2.0.0",
+    "mutexify": "^1.1.0",
     "ndjson": "^1.4.3",
     "pump": "^1.0.1",
     "rimraf": "^2.5.4",

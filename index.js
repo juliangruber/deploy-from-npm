@@ -11,6 +11,7 @@ var resolve = require('path').resolve
 var assert = require('assert')
 var RegClient = require('silent-npm-registry-client')
 var rmrf = require('rimraf')
+var mutex = require('mutexify')
 
 module.exports = deploy
 
@@ -160,18 +161,20 @@ function testStream () {
   })
 }
 
-function upgrade (dir, pkgs, cb) {
-  var args = ['install']
-  pkgs.forEach(function (pkg) {
-    console.log('Upgrade to %s@%s', pkg.name, pkg.version)
-    args.push(pkg.name + '@' + pkg.version)
-  })
-  run('npm', args, { cwd: dir }, function (err) {
-    if (err) return cb(err)
+function upgrade (lock, dir, pkgs, cb) {
+  lock(function (release) {
+    var args = ['install']
     pkgs.forEach(function (pkg) {
-      console.log('Installed %s@%s', pkg.name, pkg.version)
+      console.log('Upgrade to %s@%s', pkg.name, pkg.version)
+      args.push(pkg.name + '@' + pkg.version)
     })
-    cb(null, dir)
+    run('npm', args, { cwd: dir }, function (err) {
+      if (err) return cb(err)
+      pkgs.forEach(function (pkg) {
+        console.log('Installed %s@%s', pkg.name, pkg.version)
+      })
+      cb(null, dir)
+    })
   })
 }
 
