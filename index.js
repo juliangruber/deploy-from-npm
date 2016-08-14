@@ -31,13 +31,14 @@ function deploy (dir, reload) {
   var deps = pkg.dependencies || {}
   var depNames = Object.keys(deps)
   if (!depNames.length) return
+  var upgradeLock = mutex()
 
   var pipeline = pipe(
     request(url),
     ndjson.parse(),
     filterStream(deps),
     testStream(),
-    upgradeStream(dir),
+    upgradeStream(dir, upgradeLock),
     signalStream(reload)
   )
 
@@ -86,7 +87,7 @@ function deploy (dir, reload) {
 
   function upgradeSelected (toUpgrade) {
     if (!toUpgrade.length) return console.log('All OK')
-    upgrade(dir, toUpgrade, function (err) {
+    upgrade(upgradeLock, dir, toUpgrade, function (err) {
       if (err) return
       console.log('Upgraded all!')
     })
@@ -178,9 +179,9 @@ function upgrade (lock, dir, pkgs, cb) {
   })
 }
 
-function upgradeStream (dir) {
+function upgradeStream (dir, upgradeLock) {
   function transform (pkg, _, cb) {
-    upgrade(dir, [pkg], function (err, dir) {
+    upgrade(upgradeLock, dir, [pkg], function (err, dir) {
       if (err) cb()
       else cb(null, dir)
     })
