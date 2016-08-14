@@ -17,6 +17,7 @@ $ npm install -g psy
 $ psy start -n my-service -- npm start
 
 $ # use deploy-from-npm to restart it once a dependency has been updated
+$ npm install -g deploy-from-npm
 $ deploy-from-npm . "psy restart my-service"
 ```
 
