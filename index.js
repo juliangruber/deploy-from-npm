@@ -86,11 +86,20 @@ function deploy (dir, reload) {
   }
 
   function upgradeSelected (toUpgrade) {
-    if (!toUpgrade.length) return console.log('All OK')
+    if (!toUpgrade.length) {
+      console.log('All OK')
+      done()
+      return
+    }
     upgrade(upgradeLock, dir, toUpgrade, function (err) {
       if (err) return
       console.log('Upgraded all!')
+      done()
     })
+  }
+
+  function done () {
+    signal(dir, reload, true)
   }
 
   checkAndTest()
@@ -193,14 +202,19 @@ function upgradeStream (dir, upgradeLock) {
   })
 }
 
+function signal (dir, reload, initial, cb) {
+  cb = cb || function () {}
+  console.log('Reload %s', dir)
+  reload(initial, function (err) {
+    if (err) return cb(err)
+    console.log('Reloaded!')
+    cb()
+  })
+}
+
 function signalStream (reload) {
   function write (dir, _, cb) {
-    console.log('Reload %s', dir)
-    reload(function (err) {
-      if (err) return cb(err)
-      console.log('Reloaded!')
-      cb()
-    })
+    signal(dir, reload, false, cb)
   }
   return Writable({
     objectMode: true,

@@ -22,6 +22,6 @@ if (!dir || !reloadCmd) {
   process.exit(1)
 }
 
-deploy(dir, function (cb) {
+deploy(dir, function (_, cb) {
   exec(reloadCmd, cb)
 })
