@@ -113,7 +113,7 @@ function filterStream (deps) {
       console.error('Skipping %s@%s (out of range %s)', name, latest, deps[name])
       return cb()
     }
-    if (!repo || doc.repository.type != 'git') {
+    if (!repo || doc.repository.type !== 'git') {
       console.error('Skipping %s@%s (invalid repository)', name, latest)
       return cb()
     }
