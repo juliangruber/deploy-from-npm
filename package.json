@@ -21,6 +21,6 @@
     "silent-npm-registry-client": "^2.1.0"
   },
   "devDependencies": {
-    "standard": "^7.1.2"
+    "standard": "^8.5.0"
   }
 }
