@@ -16,7 +16,7 @@
     "mutexify": "^1.1.0",
     "ndjson": "^1.4.3",
     "pump": "^1.0.1",
-    "rimraf": "^2.5.4",
+    "rimraf": "^2.6.0",
     "semver": "^5.3.0",
     "silent-npm-registry-client": "^2.1.0"
   },
